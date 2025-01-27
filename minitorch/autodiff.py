@@ -90,7 +90,7 @@ class Variable(Protocol):
         pass
 
 
-def topological_sort(variable: Variable) -> Iterable[Variable]:
+def topological_sort(variable: Variable, visited=None, sorted_vars=None) -> Iterable[Variable]:
     """
     Computes the topological order of the computation graph.
 
@@ -101,9 +101,21 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
         Non-constant Variables in topological order starting from the right.
     """
     # BEGIN ASSIGN1_1
-    # TODO
+    if visited is None:
+        visited = set()
+    if sorted_vars is None:
+        sorted_vars = []
+    if variable.unique_id in visited or variable.is_constant():
+        return sorted_vars
+
+    visited.add(variable.unique_id)
+
+    for p in variable.parents:
+        topological_sort(p, visited, sorted_vars)
+
+    sorted_vars.insert(0, variable)
     
-    raise NotImplementedError("Task Autodiff Not Implemented Yet")
+    return sorted_vars
     # END ASSIGN1_1
 
 
@@ -119,9 +131,18 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
     # BEGIN ASSIGN1_1
-    # TODO
-   
-    raise NotImplementedError("Task Autodiff Not Implemented Yet")
+    sorted_vars = topological_sort(variable)
+    parent_grads = {variable.unique_id : deriv}
+    for var in sorted_vars:
+        if var.is_leaf():
+            var.accumulate_derivative(parent_grads[var.unique_id])
+            continue
+        chain = var.chain_rule(parent_grads[var.unique_id])
+        for parent in chain:
+            if parent[0].unique_id in parent_grads:
+                parent_grads[parent[0].unique_id] += parent[1]
+            else:
+                parent_grads[parent[0].unique_id] = parent[1]
     # END ASSIGN1_1
 
 
