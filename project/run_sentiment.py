@@ -40,9 +40,6 @@ class Linear(minitorch.Module):
         # END ASSIGN1_3
 
     def forward(self, x):
-        
-        print(x.shape)
-
         batch, in_size = x.shape
         
         # BEGIN ASSIGN1_3
@@ -109,7 +106,7 @@ class Network(minitorch.Module):
         hidden = self.linear1(average_embed)
         re_dropped = minitorch.dropout(hidden.relu(), self.dropout_prob)
         out = self.linear2(re_dropped)
-        return out.sigmoid()
+        return out.sigmoid().view(batch)
         # END ASSIGN1_3
 
 
@@ -156,6 +153,10 @@ def default_log_fn(
         print(f"Validation accuracy: {validation_accuracy[-1]:.2%}")
         print(f"Best Valid accuracy: {best_val:.2%}")
 
+def binary_cross_entropy(y_pred, y_true):
+    ones = minitorch.ones(y_true.shape, backend=BACKEND)
+    return -(y_true * y_pred + (y_true - 1) * (y_pred - 1)).log()
+
 
 class SentenceSentimentTrain:
     '''
@@ -163,6 +164,8 @@ class SentenceSentimentTrain:
     '''
     def __init__(self):
         self.model = Network()
+
+
 
     def train(
         self,
@@ -201,8 +204,26 @@ class SentenceSentimentTrain:
                 # 4. Calculate the loss using Binary Crossentropy Loss
                 # 5. Call backward function of the loss
                 # 6. Use Optimizer to take a gradient step
+                x = minitorch.tensor(
+                    X_train[batch_num * batch_size:(batch_num + 1) * batch_size],
+                    backend=BACKEND,
+                    requires_grad=True
+                )
+                y = minitorch.tensor(
+                    y_train[batch_num * batch_size:(batch_num + 1) * batch_size],
+                    backend=BACKEND,
+                    requires_grad=True
+                )
+
+                x.requires_grad_(True)
+                y.requires_grad_(True)
+
+                out = model(x)
+                loss = binary_cross_entropy(out, y).mean()
                 
-                raise NotImplementedError
+                loss.backward()
+                optim.step()
+                optim.zero_grad()
                 # END ASSIGN1_4
                 
                 
@@ -223,9 +244,13 @@ class SentenceSentimentTrain:
                 # 2. Get the output of the model
                 # 3. Obtain validation predictions using the get_predictions_array function, and add to the validation_predictions list
                 # 4. Obtain the validation accuracy using the get_accuracy function, and add to the validation_accuracy list
-                
-                raise NotImplementedError
-                
+                x = minitorch.tensor(X_val, backend=BACKEND)
+                y = minitorch.tensor(y_val, backend=BACKEND)
+
+                out = model(x)
+                val_preds = get_predictions_array(y, out)
+                validation_predictions.append(val_preds)
+                validation_accuracy.append(get_accuracy(val_preds))
                 # END ASSIGN1_4
                 
                 model.train()
