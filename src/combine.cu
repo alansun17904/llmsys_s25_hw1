@@ -362,7 +362,7 @@ __global__ void reduceKernel(
 
     // __shared__ double cache[BLOCK_DIM]; // Uncomment this line if you want to use shared memory to store partial results
     int out_index[MAX_DIMS];
-
+    int a_index[MAX_DIMS];
     /// BEGIN ASSIGN1_2
     /// TODO
     // 1. Define the position of the output element that this thread or this block will write to
@@ -371,7 +371,28 @@ __global__ void reduceKernel(
     // 4. Iterate over the reduce_dim dimension of the input array to compute the reduced value
     // 5. Write the reduced value to out memory
     
-    assert(false && "Not Implemented");
+    int i = threadIdx.x + blockDim.x * blockIdx.x;
+    to_index(i, out_shape, out_index, shape_size);
+    int out_pos = index_to_position(out_index, out_strides, shape_size);
+    for (j = 0; j < shape_size; j++) {
+      if (out_index[j] >= out_shape[j]) {
+        return;
+      }
+    }
+    for (k = 0; k < MAX_DIMS; k++) {
+      a_index[k] = out_index[k];
+    }
+
+    for (j = 0; j < a_shape[reduce_dim]; j++) {
+      a_index[reduce_dim] = j;
+      int a_pos = index_to_position(a_index, a_strides, a_shape);
+      reduce_value = fn(fn_id, reduce_value, a_storage[a_pos]);
+    }
+
+    out[out_pos] = reduce_value
+
+
+
     /// END ASSIGN1_2
 }
 
