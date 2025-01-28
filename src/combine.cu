@@ -374,22 +374,22 @@ __global__ void reduceKernel(
     int i = threadIdx.x + blockDim.x * blockIdx.x;
     to_index(i, out_shape, out_index, shape_size);
     int out_pos = index_to_position(out_index, out_strides, shape_size);
-    for (j = 0; j < shape_size; j++) {
+    for (int j = 0; j < shape_size; j++) {
       if (out_index[j] >= out_shape[j]) {
         return;
       }
     }
-    for (k = 0; k < MAX_DIMS; k++) {
+    for (int k = 0; k < MAX_DIMS; k++) {
       a_index[k] = out_index[k];
     }
 
-    for (j = 0; j < a_shape[reduce_dim]; j++) {
+    for (int j = 0; j < a_shape[reduce_dim]; j++) {
       a_index[reduce_dim] = j;
-      int a_pos = index_to_position(a_index, a_strides, a_shape);
+      int a_pos = index_to_position(a_index, a_strides, shape_size);
       reduce_value = fn(fn_id, reduce_value, a_storage[a_pos]);
     }
 
-    out[out_pos] = reduce_value
+    out[out_pos] = reduce_value;
 
 
 
