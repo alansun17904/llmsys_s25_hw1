@@ -240,9 +240,37 @@ __global__ void MatrixMultiplyKernel(
     // 5. Compute the output tile for this thread block
     // 6. Synchronize to make sure all threads are done computing the output tile for (row, col)
     // 7. Write the output to global memory
+    int out_index[3];
+    int a_index[3];
+    int b_index[3];
+    int a_pos, b_pos, out_pos;
+    int row_index = blockIdx.x * blockDim.x + threadIdx.x;
+    int col_index = blockIdx.y * blockDim.y + threadIdx.y;
 
-    assert(false && "Not Implemented");
-    /// END ASSIGN1_2
+    // printf("blockDim.x: %d, blockDim.y: %d, gridDim.x: %d, gridDim.y: %d ", blockDim.x, blockDim.y, gridDim.x, gridDim.y);
+
+    if (batch >= out_shape[0] || row_index >= out_shape[1] || col_index >= out_shape[2]) {
+      return;
+    }
+
+    a_index[0] = batch;
+    a_index[1] = row_index;
+    b_index[0] = batch;
+    b_index[2] = col_index;
+    out_index[0] = batch;
+    out_index[1] = row_index;
+    out_index[2] = col_index;
+
+    float out_val = 0;
+    for (int n = 0; n < a_shape[2]; n++) {
+      a_index[2] = n;
+      b_index[1] = n;
+      a_pos = index_to_position(a_index, a_strides, 3);
+      b_pos = index_to_position(b_index, b_strides, 3);
+      out_val += a_storage[a_pos] * b_storage[b_pos];
+    }
+    out_pos = index_to_position(out_index, out_strides, 3);
+    out[out_pos] = out_val;
 }
 
 
@@ -390,9 +418,6 @@ __global__ void reduceKernel(
     }
 
     out[out_pos] = reduce_value;
-
-
-
     /// END ASSIGN1_2
 }
 
@@ -530,7 +555,7 @@ void MatrixMultiply(
     cudaMemcpy(d_b_strides, b_strides, 3 * sizeof(int), cudaMemcpyHostToDevice);
 
     int threadsPerBlock = 32;
-    dim3 blockDims(threadsPerBlock, threadsPerBlock, 1); // Adjust these values based on your specific requirements
+    dim3 blockDims(threadsPerBlock, threadsPerBlock, 1);
     dim3 gridDims((m + threadsPerBlock - 1) / threadsPerBlock, (p + threadsPerBlock - 1) / threadsPerBlock, batch);
     MatrixMultiplyKernel<<<gridDims, blockDims>>>(
         d_out, d_out_shape, d_out_strides, d_a, d_a_shape, d_a_strides, d_b, d_b_shape, d_b_strides

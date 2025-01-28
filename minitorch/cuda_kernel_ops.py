@@ -246,7 +246,7 @@ class CudaKernelOps(TensorOps):
             ctypes.c_int                                                              # out_shape[2], p
         ]
 
-        # Define the return type for the tensorZip function
+        # Define the return type for the MatrixMultiply function
         lib.MatrixMultiply.restype = None
 
         assert len(out._tensor._shape) == 3, f"{len(out._tensor._shape)}"
@@ -259,8 +259,20 @@ class CudaKernelOps(TensorOps):
         # BEGIN ASSIGN1_2
         # TODO
         # 1. Call the Matmul function implemented in CUDA
-
-        raise NotImplementedError("Matrix Multiply Function Not Implemented Yet")
+        lib.MatrixMultiply(
+            out._tensor._storage,
+            out._tensor._shape.astype(np.int32),
+            out._tensor._strides.astype(np.int32),
+            a._tensor._storage,
+            a._tensor._shape.astype(np.int32),
+            a._tensor._strides.astype(np.int32),
+            b._tensor._storage,
+            b._tensor._shape.astype(np.int32),
+            b._tensor._strides.astype(np.int32),
+            out.shape[0],
+            out.shape[1],
+            out.shape[2],
+        )
         # END ASSIGN1_2
         
         # Undo 3d if we added it.

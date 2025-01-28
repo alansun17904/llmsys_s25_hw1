@@ -33,13 +33,16 @@ class Linear(minitorch.Module):
         # 2. Initialize self.bias to be a random parameter of (out_size)
         # 3. Set self.out_size to be out_size
         # HINT: make sure to use the RParam function
-    
-        raise NotImplementedError
-    
+
+        self.weights = RParam(in_size, out_size)
+        self.bias = RParam(out_size,)
+        self.out_size = out_size    
         # END ASSIGN1_3
 
     def forward(self, x):
         
+        print(x.shape)
+
         batch, in_size = x.shape
         
         # BEGIN ASSIGN1_3
@@ -50,8 +53,7 @@ class Linear(minitorch.Module):
         # 4. Add self.bias
         # HINT: You can use the view function of minitorch.tensor for reshape
 
-        raise NotImplementedError
-    
+        return x.view(batch, in_size) @ self.weights.value.view(in_size, self.out_size) + self.bias.value
         # END ASSIGN1_3
         
         
@@ -82,8 +84,8 @@ class Network(minitorch.Module):
         # BEGIN ASSIGN1_3
         # TODO
         # 1. Construct two linear layers: the first one is embedding_dim * hidden_dim, the second one is hidden_dim * 1
-
-        raise NotImplementedError
+        self.linear1 = Linear(embedding_dim, hidden_dim)
+        self.linear2 = Linear(hidden_dim, 1)
         # END ASSIGN1_3
         
         
@@ -101,9 +103,13 @@ class Network(minitorch.Module):
         # 4. Apply the second linear layer
         # 5. Apply sigmoid and reshape to (batch)
         # HINT: You can use minitorch.dropout for dropout, and minitorch.tensor.relu for ReLU
-        
-        raise NotImplementedError
-    
+        batch, _, embed_dim = embeddings.shape
+
+        average_embed = embeddings.mean(1).view(batch, embed_dim)
+        hidden = self.linear1(average_embed)
+        re_dropped = minitorch.dropout(hidden.relu(), self.dropout_prob)
+        out = self.linear2(re_dropped)
+        return out.sigmoid()
         # END ASSIGN1_3
 
 
