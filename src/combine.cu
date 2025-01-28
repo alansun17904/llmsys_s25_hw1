@@ -481,8 +481,8 @@ __global__ void zipKernel(
         return;
       }
     }
-    a_pos = index_to_position(a_index, a_strides, a_shape_size);
-    b_pos = index_to_position(b_index, b_strides, b_shape_size);
+    int a_pos = index_to_position(a_index, a_strides, a_shape_size);
+    int b_pos = index_to_position(b_index, b_strides, b_shape_size);
 
     out[out_pos] = fn(fn_id, a_storage[a_pos], b_storage[b_pos]);
     /// END ASSIGN1_2
